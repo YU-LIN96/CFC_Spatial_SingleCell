@@ -1,0 +1,1491 @@
+---
+title: "subclustering"
+author: "Yu"
+date: "2023-10-20"
+output: html_document
+---
+
+```{r}
+library(Seurat)
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(enrichplot)
+library(reshape2)
+```
+
+```{r}
+load("./Data/merge.obj.RData")
+```
+
+
+
+```{r amygdala}
+neo.obj <- subset(merge.obj, subset = anatomy == "OLF")
+```
+
+
+
+```{r} 
+neo.obj <- ScaleData(neo.obj)
+neo.obj <- FindVariableFeatures(neo.obj)
+neo.obj <- RunPCA(neo.obj)
+
+ElbowPlot(neo.obj,ndims = 50)
+
+```
+
+
+```{r} 
+# neo.obj <- RunUMAP(neo.obj,dims = 1:10)
+neo.obj <- FindNeighbors(neo.obj,dims = 1:10)
+neo.obj <- FindClusters(neo.obj, resolution = 0.15)
+
+
+
+FeaturePlot(neo.obj, features = "Lypd1")
+DimPlot(neo.obj)
+
+SpatialDimPlot(neo.obj,
+               images = "d0_cc_1h_rep1",
+               cols = c("3" =  "#39B600",
+                        "2" ="#00B0F6",
+                        "1" = "#9590FF",
+                        "0" = "#F8766D"),
+               pt.size.factor = 1.6, label = F)
+
+# ggsave(paste("./Fig_section3/SpatialPlot.OLF_sub.tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+
+
+SpatialFeaturePlot(neo.obj, features = "Lypd1",
+                   images = "d0_cc_1h_rep1",
+                   pt.size.factor = 1.6)
+ggsave(paste("./Fig_section3/SpatialPlot.lypd1.tiff", sep = ""), device='tiff', dpi = 300,height = 1500, width = 1500, unit = 'px')
+
+
+DimPlot(neo.obj, group.by = "seurat_clusters",
+        pt.size = 0.6, label = F)
+
+DimPlot(neo.obj, group.by = "seurat_clusters", label = F, pt.size = 0.01,
+        cols = c("3" =  "#39B600",
+                        "2" ="#00B0F6",
+                        "1" = "#9590FF",
+                        "0" = "#F8766D")) + 
+  ggtitle("")+
+  NoLegend()
+ggsave(paste("./Fig_section2/Dimplot.olf.res300.unlabeled.tiff", sep = ""), device='tiff', 
+       dpi = 300,height = 1500, width = 1500, unit = 'px')
+
+FeaturePlot(neo.obj, features = "Lypd1") + NoLegend()
+
+ggscplot(object = neo.obj,features = "Lypd1") +
+  geom_density2d_filled(bins = 10,show.legend = F) +
+  geom_scPoint(aes(color = value),size = 0.2) +
+  scale_color_gradient(low = "white",high = "#CC0033",name = "gene expression") +
+  facet_wrap(~gene_name,ncol = 3) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold.italic",size = rel(1)),
+        axis.text = element_blank()) +
+  scale_fill_manual(values = colorRampPalette(c("white","#336633"))(10))
+
+ggsave(paste("./Fig_section3/SpaFeature.lypd1.tiff", sep = ""), device='tiff', dpi = 300,height = 1500, width = 1500, unit = 'px')
+
+ggscplot(object = neo.obj,features = "Lypd1") +
+  geom_density2d_filled(bins = 10,show.legend = F) +
+  geom_scPoint(aes(color = value),size = 0.2) +
+  scale_color_gradient(low = "white",high = "#CC0033",name = "gene expression") +
+  facet_wrap(~gene_name,ncol = 3) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold.italic",size = rel(1)),
+        axis.text = element_blank()) +
+  scale_fill_manual(values = colorRampPalette(c("white","#336633"))(10))+
+  NoLegend()
+
+ggsave(paste("./Fig_section3/SpaFeature.nolegend.lypd1.tiff", sep = ""), device='tiff', dpi = 300,height = 1500, width = 1500, unit = 'px')
+
+```
+
+
+
+```{r}
+amygdala.data <- FetchData(neo.obj, vars = "Spatial_snn_res.0.15")
+amygdala.id <- rownames(amygdala.data)[amygdala.data$Spatial_snn_res.0.1 == "1"]
+```
+
+
+
+```{r}
+merge.obj$anatomy.detail <- as.character(merge.obj$anatomy)
+
+merge.obj@meta.data[amygdala.id,]$anatomy.detail <- "Amygdala"
+
+# merge.obj$anatomy <- factor(merge.obj$anatomy, levels = c("Frontal Cortex","Thalamus","Hippocampus","Neocortex","Amygdala","Hypothalamus","Cerebral Nuclei"))
+```
+
+
+
+```{r}
+SpatialFeaturePlot(merge.obj, features = "Lypd1",
+                   images = "d0_cc_1h_rep1",
+                   pt.size.factor = 1.6)+ NoLegend()
+SpatialDimPlot(merge.obj, group.by = "anatomy.detail",
+               images = "d0_cc_1h_rep1",
+               pt.size.factor = 1.6, label = F)
+
+
+```
+
+
+```{r}
+save(merge.obj, file = "./Data/merge.obj.amg.RData")
+```
+
+
+```{r hippocampus}
+hippo.obj <- subset(merge.obj, subset = anatomy == "Hippocampus")
+```
+
+
+
+```{r}
+hippo.obj <- ScaleData(hippo.obj)
+hippo.obj <- FindVariableFeatures(hippo.obj)
+hippo.obj <- RunPCA(hippo.obj)
+
+
+ElbowPlot(hippo.obj,ndims = 50)
+plot(1:50,hippo.obj@reductions$pca@stdev^2)
+```
+
+
+```{r}
+hippo.obj <- RunUMAP(hippo.obj,dims = 1:10)
+hippo.obj <- FindNeighbors(hippo.obj,dims = 1:10)
+hippo.obj <- FindClusters(hippo.obj, resolution = 0.05)
+
+
+
+DimPlot(hippo.obj)
+
+SpatialDimPlot(hippo.obj,
+               images = "d0_cc_1h_rep1",
+               pt.size.factor = 1.6, label = F)
+```
+
+
+
+
+```{r}
+hippo.data <- FetchData(hippo.obj, vars = "Spatial_snn_res.0.05")
+hippo.dg.id <- rownames(hippo.data)[hippo.data$Spatial_snn_res.0.05 == "2"]
+hippo.ca1.id <- rownames(hippo.data)[hippo.data$Spatial_snn_res.0.05 == "3"]
+hippo.ca3.id <- rownames(hippo.data)[hippo.data$Spatial_snn_res.0.05 == "1"]
+```
+
+
+```{r}
+merge.obj@meta.data[hippo.dg.id,]$anatomy.detail <- "Hippocampus_DG"
+merge.obj@meta.data[hippo.ca1.id,]$anatomy.detail <- "Hippocampus_CA1"
+merge.obj@meta.data[hippo.ca3.id,]$anatomy.detail <- "Hippocampus_CA3"
+
+merge.obj$anatomy.detail <- factor(merge.obj$anatomy.detail, 
+                            levels = c("Cortex","Thalamus","Hippocampus","Hippocampus_DG","Hippocampus_CA1","Hippocampus_CA3",
+                                       "OLF","Amygdala",
+                                       "Hypothalamus","Cerebral Nuclei"))
+```
+
+```{r}
+SpatialDimPlot(merge.obj, group.by = "anatomy.detail",
+               images = "d0_cc_1h_rep1",
+               pt.size.factor = 1.6, label = F)
+
+save(merge.obj, file = "annotated.merge.obj.Rdata")
+```
+
+
+```{r}
+load("annotated.merge.obj.Rdata")
+merge.obj <- UpdateSeuratObject(merge.obj)
+```
+
+
+```{r}
+
+p <- SpatialDimPlot(merge.obj, group.by = "anatomy.detail",
+               images = "d0_cc_1h_rep1",
+               pt.size.factor = 1.6, label = F)
+# Extract colors
+colors <- ggplot_build(p)$data[[1]]$fill %>% 
+  unique()
+
+"#D89000" "#A3A500" "#00B0F6" "#E76BF3" "#F8766D" "#FF62BC" "#9590FF" "#00BFC4" "#00BF7D" "#39B600"
+```
+
+
+```{r}
+SpatialDimPlot(merge.obj, group.by = "anatomy.detail",
+               cols = c("Thalamus"="#D89000" ,
+                        "Hippocampus"="#A3A500", 
+                        "OLF"="#00B0F6", 
+                        "Hypothalamus"="#E76BF3", 
+                        "Cortex"="#F8766D", 
+                        "Cerebral Nuclei"="#FF62BC", 
+                        "Amygdala"="#9590FF", 
+                        "Hippocampus_CA3"="#00BFC4", 
+                        "Hippocampus_CA1"="#00BF7D", 
+                        "Hippocampus_DG"="#39B600"),
+               images = "d0_cc_1h_rep1",
+               pt.size.factor = 1.6, label = F)
+
+ggsave(paste("./Fig_section3/SpatialPlot.fullcorlor.tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+
+SpatialDimPlot(merge.obj, group.by = "anatomy.detail",
+               cols = c("Thalamus"="grey" ,
+                        "Hippocampus"="#A3A500", 
+                        "OLF"="grey", 
+                        "Hypothalamus"="grey", 
+                        "Cortex"="grey", 
+                        "Cerebral Nuclei"="grey", 
+                        "Amygdala"="#9590FF", 
+                        "Hippocampus_CA3"="#00BFC4", 
+                        "Hippocampus_CA1"="#00BF7D", 
+                        "Hippocampus_DG"="#39B600"),
+               images = "d0_cc_1h_rep1",
+               pt.size.factor = 1.6, label = F)
+
+ggsave(paste("./Fig_section3/SpatialPlot.highlighted.tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+```
+
+
+```{r sub UMAP}
+
+sub.fig3.obj <- subset(merge.obj, subset = anatomy.detail %in% c("Hippocampus_CA1","Hippocampus_CA3","Hippocampus_DG","Hippocampus",
+                                                                 "Amygdala"))
+
+DimPlot(sub.fig3.obj, group.by = "anatomy.detail",
+         cols = c(
+                        "Hippocampus"="#A3A500",
+                        "Amygdala"="#9590FF", 
+                        "Hippocampus_CA3"="#00BFC4", 
+                        "Hippocampus_CA1"="#00BF7D", 
+                        "Hippocampus_DG"="#39B600"))+ NoLegend()
+ggsave(paste("./Fig_section3/dimplot.amg_hip.nolegend.tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+
+save(sub.fig3.obj, file = "sub.fig3.obj.Rdata")
+```
+
+
+
+```{r sub marker}
+sub.fig3.obj$anatomy.detail <- factor(sub.fig3.obj$anatomy.detail,
+                                      levels = c("Hippocampus", "Hippocampus_CA3","Hippocampus_CA1","Hippocampus_DG","Amygdala"))
+Idents(sub.fig3.obj) <- "anatomy.detail"
+sub.all.marker <- FindAllMarkers(sub.fig3.obj, only.pos = TRUE,
+                                 pseudocount.use = 0.001)
+
+sub.all.marker$pct.diff <- sub.all.marker$pct.1 - sub.all.marker$pct.2
+```
+
+```{r}
+top_10markers <- sub.all.marker %>% group_by(cluster)  %>% top_n(20, avg_log2FC)
+
+write.csv(top_10markers, file = "./Fig_section3/top20.subregional.marker.csv")
+
+top_10.markers <- sub.all.marker %>% group_by(cluster)  %>% top_n(10, avg_log2FC)
+top_10markers <- sub.all.marker %>% group_by(cluster)  %>% top_n(10, pct.diff)
+```
+
+```{r submarker heatmap}
+
+DoHeatmap(sub.fig3.obj, group.by = "anatomy.detail",features = unique(top_10markers$gene))+
+  scale_fill_gradientn(colors = c("#0099CC", "white", "#CC0033"))+ NoLegend()                                                                                                                                                                         
+ggsave(paste("./Fig_section3/Dohtmp.subregion.top10.marker.tiff", sep = ""), device='tiff', 
+       dpi = 300, height = 1500, width = 1500, unit = 'px')
+
+
+
+annoGene <- c("Thbs4","Ntf3","Wnt2","Thsd4","Rxrg")
+
+
+tiff(filename = paste("./Fig_section3/htmp.marker.tiff", sep = ""), res = 300, height = 1000, width = 1000)
+AverageHeatmap(object = sub.fig3.obj,
+               assays = "Spatial",group.by = "anatomy.detail",
+               markerGene = top_10markers$gene,
+               annoCol = TRUE,
+               myanCol = c("#00BFC4","#39B600","#00BF7D","#A3A500","#9590FF"),
+               showRowNames = F,
+               markGenes = annoGene)
+dev.off()
+
+```
+
+
+```{r submarker vlnplot}
+VlnPlot(sub.fig3.obj,group.by = "anatomy.detail",
+        features = c("Thbs4","Ntf3","Wnt2","Thsd4","Rxrg"),
+        flip = T, stack = T, pt.size = 0, cols = c("Thbs4"="#A3A500",
+                                                    "Rxrg"="#9590FF", 
+                                                    "Thsd4"="#00BFC4", 
+                                                    "Wnt2"="#00BF7D", 
+                                                    "Ntf3"="#39B600"))
+
+ggsave(paste("./Fig_section3/Vlnplot.submarker.tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+```{r submarker spatial featureplot}
+
+for (gene in c("Thbs4","Ntf3","Wnt2","Thsd4","Rxrg")){
+  SpatialFeaturePlot(merge.obj, features = gene,
+                   images = "d0_cc_1h_rep1",max.cutoff = 1,
+                   pt.size.factor = 1.6)
+  ggsave(paste("./Fig_section3/SpatialPlot.",gene,".tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+}
+
+# SpatialFeaturePlot(merge.obj, features = "Wnt2",
+#                    images = "d0_cc_1h_rep1",max.cutoff = 1,
+#                    pt.size.factor = 1.6)
+# ggsave(paste("./Fig_section3/SpatialPlot.lypd1.tiff", sep = ""), device='tiff', dpi = 100,height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+
+
+
+
+
+```{r sub DEG barplot}
+
+bar_data.sub.cfcvscc <- bar_data.sub[bar_data.sub$celltype %in% c("Hippocampus","Hippocampus_CA1","Hippocampus_CA3","Hippocampus_DG","Amygdala"),]
+
+plot.list=list()
+for (i in c("d0_1h","d0_4h","d1_4h")){
+  temp.data <- bar_data.sub.cfcvscc[bar_data.sub.cfcvscc$time == i,]
+  bar.plot <- ggplot(temp.data, aes(x = celltype, y = number, fill = direct)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = "Cluster", y = "Number of DEGs", fill = "Direction") +
+  geom_text(aes(label=abs(number)), position=position_dodge(width=0), 
+            hjust= ifelse(temp.data$direct == 'up', 0.5, 0.5), size=5) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue"))+
+  theme(
+    axis.text=element_text(size=10),
+    # axis.text.x = element_blank(), # Rotate x-axis labels
+    panel.background = element_rect(fill = "white"), # Change background to white
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_rect(size = 2,fill = NA)
+  )
+  plot.list[[i]] <- bar.plot
+}
+
+wrap_plots(plot.list,ncol = 1)&theme(plot.margin = unit(c(0,0,0,0),"cm"))
+ggsave(paste("./Fig_section3/barplot.subregion.marker.nonumber.tiff", sep = ""), device='tiff', dpi = 100, height = 1000, width = 1000, unit = 'px')
+
+
+
+
+```
+
+
+
+
+
+# Filter by average expression, if both low, filter
+```{r cfc vs cc in each region}
+
+condition <- c("d0.cc.1h","d0.cfc.1h","d0.cc.4h","d0.cfc.4h","d1.cc.4h","d1.cfc.4h","home.cage")
+
+
+
+Idents(merge.obj) <- "anatomy.detail"
+
+merge.obj$combined_condition <- paste(merge.obj$anatomy.detail,merge.obj$condition,sep = ".")
+
+up_count <- c()
+down_count <- c()
+up_count.name <- c()
+down_count.name <- c()
+
+time <- c("d0_1h","d0_4h","d1_4h")
+
+for (ct in unique(merge.obj$anatomy.detail)) {
+  ct.name <- ct
+  ct.name <- gsub("_", ".", ct.name)
+  if (ct == "Frontal Cortex"){
+    ct.name <- "Frontal.Cortex"
+  }
+  if (ct == "Cerebral Nuclei"){
+    ct.name <- "Cerebral.Nuclei"
+  }
+  
+  for (i in 1:3){
+    for(j in c("ccvshomecage","cfcvshomecage","cfcvscc")){
+      if (j == "ccvshomecage"){
+         next
+      }
+
+      if (j == "cfcvshomecage"){
+         next
+      }
+      
+      if (j == "cfcvscc"){
+         marker <- FindMarkers(merge.obj,
+                     ident.1 = unique(merge.obj$condition)[2*i], ident.2 = unique(merge.obj$condition)[2*i-1], # cfc cc
+                     group.by = 'condition',
+                     subset.ident = ct,
+                     pseudocount.use = 0.001)
+      
+      
+      # add average expression to DEG table
+      avg <- as.data.frame(AverageExpression(merge.obj,assays = "Spatial",
+                              features = rownames(marker),group.by = "combined_condition"))
+      marker$cfc_avg <- avg[,paste("Spatial.",ct.name,".",condition[2*i],sep = "")]
+      marker$cc_avg <- avg[,paste("Spatial.",ct.name,".",condition[2*i-1],sep = "")]
+      marker$homecage_avg <- avg[,paste("Spatial.",ct.name,".home.cage",sep = "")]
+
+      marker$celltype <- ct.name
+
+      marker$gene <- rownames(marker)
+      marker$regulation <- ifelse(marker$avg_log2FC > 0,paste0("Up"),paste0("Down"))
+
+      marker$sig <- ""
+      marker$sig[abs(marker$avg_log2FC) > log2(1.2) & marker$p_val_adj < 0.05] <- paste(ct.name,"sig",sep = "_")
+      marker$sig[marker$sig == ""] <- "not_sig"
+      marker$sig <- factor(marker$sig, levels = c("not_sig",paste(ct.name,"sig",sep = "_")))
+      
+      marker$cluster <- paste(ct.name,time[i],j, sep = "_")
+      
+      assign(paste(ct.name,time[i],j,"marker", sep = "."), marker)
+      write.csv(marker,file = paste("./detailed_anatomy/12212023/",ct.name,time[i],j,"marker.csv", sep = "."))
+      # 
+      up_count <- c(up_count, sum(marker$avg_log2FC >= log2(1.2) & marker$p_val_adj <= 0.05))
+      up_count.name <- c(up_count.name, paste(time[i],j,sep = "_"))
+      down_count <- c(down_count, sum(marker$avg_log2FC <= -log2(1.2) & marker$p_val_adj <= 0.05))
+      down_count.name <- c(down_count.name, paste(time[i],j,sep = "_"))
+    }
+    }
+      }
+}
+```
+
+
+
+```{r barplot}
+
+bar_data <- data.frame(celltype = rep(rep(unique(merge.obj$anatomy.detail),each = 9),2),
+                     number = c(up_count,-down_count),
+                     direct = c(rep("up",90),rep("down",90)),
+                     ct_time = c(up_count.name,down_count.name))
+
+bar_data <- data.frame(celltype = rep(rep(unique(merge.obj$anatomy.detail),each = 9),2),
+                     number = c(up_count,-down_count),
+                     direct = c(rep("up",90),rep("down",90)),
+                     ct_time = c(up_count.name,down_count.name))
+
+
+bar_data$time <- substr(bar_data$ct_time, start = 0 ,stop = 5)
+bar_data$ct <- substr(bar_data$ct_time, start = 7 ,stop = nchar(bar_data$ct_time))
+
+
+# "ccvshomecage"  "cfcvshomecage" "cfcvscc"   
+bar_data.sub <- bar_data[bar_data$ct == "cfcvscc",]
+
+
+plot.list=list()
+for (i in c("d0_1h","d0_4h","d1_4h")){
+  temp.data <- bar_data.sub[bar_data.sub$time == i,]
+  bar.plot <- ggplot(temp.data, aes(x = celltype, y = number, fill = direct)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = "Cluster", y = "Number of DEGs", fill = "Direction") +
+  geom_text(aes(label=abs(number)), position=position_dodge(width=0), 
+            hjust= ifelse(temp.data$direct == 'up', 0.5, 0.5), size=5) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue"))+
+  theme(
+    axis.text=element_text(size=10),
+    # axis.text.x = element_blank(), # Rotate x-axis labels
+    panel.background = element_rect(fill = "white"), # Change background to white
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_rect(size = 2,fill = NA)
+  )
+  plot.list[[i]] <- bar.plot
+}
+
+wrap_plots(plot.list,ncol = 1)&theme(plot.margin = unit(c(0,0,0,0),"cm"))
+
+# ggsave(paste("./detailed_anatomy/Barplot.cfcvscc.2nd.tiff", sep = ""), device='tiff', dpi=500, height = 8, width = 15, unit = 'in')
+# ggsave(paste("./detailed_anatomy/Barplot.cfcvscc.2nd.tiff", sep = ""), device='tiff', dpi=500, height = 8, width = 15, unit = 'in')
+# ggsave(paste("./detailed_anatomy/Barplot.cfcvshomecage.2nd.tiff", sep = ""), device='tiff', dpi=500, height = 8, width = 15, unit = 'in')
+# ggsave(paste("./Fig_section3//Barplot.cfcvscc.detailed.tiff", sep = ""), device='tiff', dpi=300, height = 2000, width = 3000, unit = 'px')
+```
+
+```{r sub DEG barplot}
+bar_data.sub.cfcvscc <- bar_data.sub[bar_data.sub$celltype %in% c("Hippocampus","Hippocampus_CA1","Hippocampus_CA3","Hippocampus_DG","Amygdala"),]
+
+plot.list=list()
+for (i in c("d0_1h","d0_4h","d1_4h")){
+  temp.data <- bar_data.sub.cfcvscc[bar_data.sub.cfcvscc$time == i,]
+  bar.plot <- ggplot(temp.data, aes(x = celltype, y = number, fill = direct)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = "Cluster", y = "Number of DEGs", fill = "Direction") +
+  geom_text(aes(label=abs(number)), position=position_dodge(width=0), 
+            hjust= ifelse(temp.data$direct == 'up', 0.5, 0.5), size=0) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue"))+
+  theme(
+    axis.text=element_text(size=10),
+    # axis.text.x = element_blank(), # Rotate x-axis labels
+    panel.background = element_rect(fill = "white"), # Change background to white
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_rect(size = 2,fill = NA)
+  )
+  plot.list[[i]] <- bar.plot
+}
+
+wrap_plots(plot.list,ncol = 1)&theme(plot.margin = unit(c(0,0,0,0),"cm"))
+
+```
+
+
+
+
+```{r transformed volcano plot just for hippocampus}
+hippocampus.marker.vars <- ls(envir = .GlobalEnv, pattern = "^Hippocampus.*\\.marker$")
+
+hippocampus.condition.DEG <- rbind(Hippocampus.d0_1h.cfcvscc.marker,
+                                    Hippocampus.d0_4h.cfcvscc.marker,
+                                    Hippocampus.d1_4h.cfcvscc.marker,
+                                    Hippocampus_CA1.d0_1h.cfcvscc.marker,
+                                    Hippocampus_CA1.d0_4h.cfcvscc.marker,
+                                    Hippocampus_CA1.d1_4h.cfcvscc.marker,
+                                    Hippocampus_CA3.d0_1h.cfcvscc.marker,
+                                    Hippocampus_CA3.d0_4h.cfcvscc.marker,
+                                    Hippocampus_CA3.d1_4h.cfcvscc.marker,
+                                    Hippocampus_DG.d0_1h.cfcvscc.marker,
+                                    Hippocampus_DG.d0_4h.cfcvscc.marker,
+                                    Hippocampus_DG.d1_4h.cfcvscc.marker)
+
+# hippocampus.condition.DEG <- hippocampus.condition.DEG%>%arrange(cluster,sig)
+
+hippocampus.condition.DEG$padj_log10_neg <-  -log10(hippocampus.condition.DEG$p_val_adj)
+hippocampus.condition.DEG$padj_log10_neg <- ifelse(hippocampus.condition.DEG$avg_log2FC > 0,
+                                        hippocampus.condition.DEG$padj_log10_neg,
+                                        -hippocampus.condition.DEG$padj_log10_neg)
+```
+
+
+
+```{r}
+hippocampus.condition.DEG$regulation[hippocampus.condition.DEG$sig == "not_sig"] <- "NS"
+
+hip.plot.list=list()
+for (ci in unique(hippocampus.condition.DEG$cluster)){
+  print(ci)
+  tmpdf=hippocampus.condition.DEG %>% filter(cluster == ci)
+  minabs=abs(min(tmpdf$padj_log10_neg))
+  maxabs=max(tmpdf$padj_log10_neg)
+  thre=0
+  if(minabs < maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > minabs] = minabs
+    thre=minabs
+  }
+  if(minabs > maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-maxabs)] = -maxabs
+    thre=maxabs
+  }
+  if(minabs == maxabs & maxabs == Inf) {
+    thre = min(
+      abs(
+        range(
+          tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < Inf & tmpdf$padj_log10_neg > -Inf]
+        )
+      )
+    )
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-thre)] = -thre
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > thre] = thre
+  }
+  
+  plotdata = tmpdf
+  tmpdf=tmpdf%>%filter(sig != "not") #这里我取了logFC最极端的几个gene来标注文本，实际处理中不一定这样做
+  tmpdf=tmpdf%>%arrange(desc(avg_log2FC))
+  tmpdf.a=head(tmpdf%>%filter(avg_log2FC > 0),5)
+  tmpdf.a$d=thre*2*0.05+(-thre)-tmpdf.a$padj_log10_neg
+  tmpdf.b=tail(tmpdf%>%filter(avg_log2FC < 0),5)
+  tmpdf.b$d=thre*2*0.95-thre  - tmpdf.b$padj_log10_neg
+  textdata.down = tmpdf.b
+  textdata.up   = tmpdf.a
+  
+  
+  ###画图
+  tmpplot=plotdata%>%ggplot(aes(x=padj_log10_neg,y=avg_log2FC))+
+    geom_point(aes(color=regulation),size=3)+
+    geom_hline(yintercept = c(-log2(1.2),log2(1.2)),linetype="dashed")+
+    geom_hline(yintercept = c(0),linetype="solid")+
+    # geom_vline(xintercept = c(-log10(0.05),log10(0.05)))+
+    # geom_vline(xintercept = c(-log10(0.01),log10(0.01)))+
+    labs(title = ci)+
+    scale_color_manual(values =  c("Up" = "red", "Down" = "blue", "NS" = "grey"))+
+    scale_y_continuous("log2(Fold Change)",expand = c(0.02,0),limits = c(-3,3))+
+    scale_x_continuous("log10(P-adjusted)", limits = c(-3, 3))+
+    theme_bw()+
+    theme(
+      panel.grid = element_blank(),
+      legend.position = "none",
+      axis.ticks.x.bottom = element_blank(),
+      axis.text.x.bottom = element_blank(),
+      axis.title.x.bottom = element_blank(),
+      axis.text.y.left = element_text(size = 14,color = "black"),
+      axis.title.y.left = element_text(size = 16),
+      plot.title = element_text(size = 8,hjust = 0.5)
+      # plot.title = element_blank()
+    )
+  
+  index=which(ci == unique(hippocampus.condition.DEG$cluster))
+  if (index!=1) {
+    tmpplot=tmpplot+theme(
+      axis.title.y.left = element_blank(),
+      axis.ticks.y.left = element_blank(),
+      axis.text.y.left = element_blank()
+    )
+  }
+  hip.plot.list[[get("index")]]=tmpplot
+} 
+
+wrap_plots(hip.plot.list,ncol = 6)&theme(plot.margin = unit(c(0,0,0,0),"cm")) # 400*500  800*500
+
+wrap_plots(hip.plot.list[7:12],ncol = 6)&theme(plot.margin = unit(c(0,0,0,0),"cm")) # 400*500  800*500
+
+# ggsave(paste("./Fig_section3/TransformedVolcano.cfcvscc.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+ggsave(paste("./Fig_section3/TransformedVolcano.cfcvscc.txt.hip2.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+
+```{r transformed volcano plot just for hippocampus base matrix}
+hippocampus.condition.DEG <- rbind(Hippocampus.d0_1h.cfcvscc.marker,
+                                    Hippocampus.d0_4h.cfcvscc.marker,
+                                    Hippocampus.d1_4h.cfcvscc.marker)
+
+# hippocampus.condition.DEG <- hippocampus.condition.DEG%>%arrange(cluster,sig)
+
+hippocampus.condition.DEG$padj_log10_neg <-  -log10(hippocampus.condition.DEG$p_val_adj)
+hippocampus.condition.DEG$padj_log10_neg <- ifelse(hippocampus.condition.DEG$avg_log2FC > 0,
+                                        hippocampus.condition.DEG$padj_log10_neg,
+                                        -hippocampus.condition.DEG$padj_log10_neg)
+```
+
+
+
+```{r}
+hippocampus.condition.DEG$regulation[hippocampus.condition.DEG$sig == "not_sig"] <- "NS"
+
+hip.plot.list=list()
+for (ci in unique(hippocampus.condition.DEG$cluster)){
+  print(ci)
+  tmpdf=hippocampus.condition.DEG %>% filter(cluster == ci)
+  minabs=abs(min(tmpdf$padj_log10_neg))
+  maxabs=max(tmpdf$padj_log10_neg)
+  thre=0
+  if(minabs < maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > minabs] = minabs
+    thre=minabs
+  }
+  if(minabs > maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-maxabs)] = -maxabs
+    thre=maxabs
+  }
+  if(minabs == maxabs & maxabs == Inf) {
+    thre = min(
+      abs(
+        range(
+          tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < Inf & tmpdf$padj_log10_neg > -Inf]
+        )
+      )
+    )
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-thre)] = -thre
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > thre] = thre
+  }
+  
+  plotdata = tmpdf
+  tmpdf=tmpdf%>%filter(sig != "not") #这里我取了logFC最极端的几个gene来标注文本，实际处理中不一定这样做
+  tmpdf=tmpdf%>%arrange(desc(avg_log2FC))
+  tmpdf.a=head(tmpdf%>%filter(avg_log2FC > 0),5)
+  tmpdf.a$d=thre*2*0.05+(-thre)-tmpdf.a$padj_log10_neg
+  tmpdf.b=tail(tmpdf%>%filter(avg_log2FC < 0),5)
+  tmpdf.b$d=thre*2*0.95-thre  - tmpdf.b$padj_log10_neg
+  textdata.down = tmpdf.b
+  textdata.up   = tmpdf.a
+  
+  
+  ###画图
+  tmpplot=plotdata%>%ggplot(aes(x=padj_log10_neg,y=avg_log2FC))+
+    geom_point(aes(color=regulation),size=3)+
+    geom_hline(yintercept = c(-log2(1.2),log2(1.2)),linetype="dashed")+
+    geom_hline(yintercept = c(0),linetype="solid")+
+    # geom_vline(xintercept = c(-log10(0.05),log10(0.05)))+
+    # geom_vline(xintercept = c(-log10(0.01),log10(0.01)))+
+    labs(title = ci)+
+    scale_color_manual(values =  c("Up" = "red", "Down" = "blue", "NS" = "grey"))+
+    scale_y_continuous("log2(Fold Change)",expand = c(0.02,0),limits = c(-3,3))+
+    scale_x_continuous("log10(P-adjusted)", limits = c(-3, 3))+
+    theme_bw()+
+    theme(
+      panel.grid = element_blank(),
+      legend.position = "none",
+      axis.ticks.x.bottom = element_blank(),
+      axis.text.x.bottom = element_blank(),
+      axis.title.x.bottom = element_blank(),
+      axis.text.y.left = element_text(size = 14,color = "black"),
+      axis.title.y.left = element_text(size = 16),
+      plot.title = element_text(size = 8,hjust = 0.5)
+      # plot.title = element_blank()
+    )
+  
+  index=which(ci == unique(hippocampus.condition.DEG$cluster))
+  if (index!=1) {
+    tmpplot=tmpplot+theme(
+      axis.title.y.left = element_blank(),
+      axis.ticks.y.left = element_blank(),
+      axis.text.y.left = element_blank()
+    )
+  }
+  hip.plot.list[[get("index")]]=tmpplot
+} 
+
+wrap_plots(hip.plot.list,ncol = 3)&theme(plot.margin = unit(c(0,0,0,0),"cm")) # 400*500  800*500
+
+
+# ggsave(paste("./Fig_section3/TransformedVolcano.cfcvscc.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+# ggsave(paste("./Fig_section3/TransformedVolcano.cfcvscc.txt.hip2.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+
+
+
+
+
+
+```{r transformed volcano plot just for amygdala}
+
+
+amg.condition.DEG <- rbind(Amygdala.d0_1h.cfcvscc.marker,
+                           Amygdala.d0_4h.cfcvscc.marker,
+                           Amygdala.d1_4h.cfcvscc.marker)
+
+# amg.condition.DEG <- amg.condition.DEG%>%arrange(cluster,sig)
+
+amg.condition.DEG$padj_log10_neg <-  -log10(amg.condition.DEG$p_val_adj)
+amg.condition.DEG$padj_log10_neg <- ifelse(amg.condition.DEG$avg_log2FC > 0,
+                                        amg.condition.DEG$padj_log10_neg,
+                                        -amg.condition.DEG$padj_log10_neg)
+```
+
+
+
+```{r}
+amg.condition.DEG$regulation[amg.condition.DEG$sig == "not_sig"] <- "NS"
+
+hip.plot.list=list()
+for (ci in unique(amg.condition.DEG$cluster)){
+  print(ci)
+  tmpdf=amg.condition.DEG %>% filter(cluster == ci)
+  minabs=abs(min(tmpdf$padj_log10_neg))
+  maxabs=max(tmpdf$padj_log10_neg)
+  thre=0
+  if(minabs < maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > minabs] = minabs
+    thre=minabs
+  }
+  if(minabs > maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-maxabs)] = -maxabs
+    thre=maxabs
+  }
+  if(minabs == maxabs & maxabs == Inf) {
+    thre = min(
+      abs(
+        range(
+          tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < Inf & tmpdf$padj_log10_neg > -Inf]
+        )
+      )
+    )
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-thre)] = -thre
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > thre] = thre
+  }
+  
+  plotdata = tmpdf
+  tmpdf=tmpdf%>%filter(sig != "not") #这里我取了logFC最极端的几个gene来标注文本，实际处理中不一定这样做
+  tmpdf=tmpdf%>%arrange(desc(avg_log2FC))
+  tmpdf.a=head(tmpdf%>%filter(avg_log2FC > 0),5)
+  tmpdf.a$d=thre*2*0.05+(-thre)-tmpdf.a$padj_log10_neg
+  tmpdf.b=tail(tmpdf%>%filter(avg_log2FC < 0),5)
+  tmpdf.b$d=thre*2*0.95-thre  - tmpdf.b$padj_log10_neg
+  textdata.down = tmpdf.b
+  textdata.up   = tmpdf.a
+  
+  
+  ###画图
+  tmpplot=plotdata%>%ggplot(aes(x=padj_log10_neg,y=avg_log2FC))+
+    geom_point(aes(color=regulation),size=2)+
+    geom_hline(yintercept = c(-log2(1.2),log2(1.2)),linetype="dashed")+
+    geom_hline(yintercept = c(0),linetype="solid")+
+    # geom_vline(xintercept = c(-log10(0.05),log10(0.05)))+
+    # geom_vline(xintercept = c(-log10(0.01),log10(0.01)))+
+    labs(title = ci)+
+    scale_color_manual(values =  c("Up" = "red", "Down" = "blue", "NS" = "grey"))+
+    scale_y_continuous("log2(Fold Change)",expand = c(0.02,0),limits = c(-3,3))+
+    scale_x_continuous("log10(P-adjusted)", limits = c(-3, 3))+
+    theme_bw()+
+    theme(
+      panel.grid = element_blank(),
+      legend.position = "none",
+      axis.ticks.x.bottom = element_blank(),
+      axis.text.x.bottom = element_blank(),
+      axis.title.x.bottom = element_blank(),
+      axis.text.y.left = element_text(size = 14,color = "black"),
+      axis.title.y.left = element_text(size = 16),
+      plot.title = element_text(size = 8,hjust = 0.5)
+      # plot.title = element_blank()
+    )
+  
+  index=which(ci == unique(amg.condition.DEG$cluster))
+  if (index!=1) {
+    tmpplot=tmpplot+theme(
+      axis.title.y.left = element_blank(),
+      axis.ticks.y.left = element_blank(),
+      axis.text.y.left = element_blank()
+    )
+  }
+  hip.plot.list[[get("index")]]=tmpplot
+} 
+
+wrap_plots(hip.plot.list,ncol = 6)&theme(plot.margin = unit(c(0,0,0,0),"cm")) # 400*500  800*500
+
+# ggsave(paste("./Fig_section3/TransformedVolcano.cfcvscc.amg.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+ggsave(paste("./Fig_section3/TransformedVolcano.cfcvscc.amg.txt.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+```{r}
+library(ComplexUpset)
+library(ComplexHeatmap)
+```
+
+```{r hippocampus upsetplot}
+intermediate.df <- hippocampus.condition.DEG
+intermediate.df$cluster <- sub("_cfcvscc$", "", intermediate.df$cluster)
+
+lt <- list(Hippocampus_d0_1h = intermediate.df[intermediate.df$cluster == "Hippocampus_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_d0_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_d1_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_d1_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_CA1_d0_1h = intermediate.df[intermediate.df$cluster == "Hippocampus_CA1_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_CA1_d0_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_CA1_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_CA1_d1_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_CA1_d1_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_CA3_d0_1h = intermediate.df[intermediate.df$cluster == "Hippocampus_CA3_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_CA3_d0_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_CA3_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_CA3_d1_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_CA3_d1_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_DG_d0_1h = intermediate.df[intermediate.df$cluster == "Hippocampus_DG_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_DG_d0_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_DG_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_DG_d1_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_DG_d1_4h" & intermediate.df$sig != "not_sig",]$gene)
+
+
+m <- make_comb_mat(lt)
+
+
+tiff("./Fig_section3/Upsetplot.sub.hipppocampus.tiff", width = 1000, height = 1000,res = 100)
+
+ComplexHeatmap::UpSet(
+  m,
+  comb_order = order(comb_size(m),decreasing = T),
+  set_order = c("Hippocampus_d0_1h","Hippocampus_d0_4h","Hippocampus_d1_4h",
+                "Hippocampus_CA1_d0_1h","Hippocampus_CA1_d0_4h","Hippocampus_CA1_d1_4h",
+                "Hippocampus_CA3_d0_1h","Hippocampus_CA3_d0_4h","Hippocampus_CA3_d1_4h",
+                "Hippocampus_DG_d0_1h","Hippocampus_DG_d0_4h","Hippocampus_DG_d1_4h"),
+  top_annotation = upset_top_annotation(m, add_numbers = TRUE),
+  right_annotation = upset_right_annotation(
+    m,
+    add_numbers = TRUE,
+    annotation_name_side = "top",
+    axis_param = list(side = "top")
+  ))
+
+
+# Close the device
+dev.off()
+```
+
+
+```{r amygdala upsetplot}
+intermediate.df <- amg.condition.DEG
+intermediate.df$cluster <- sub("_cfcvscc$", "", intermediate.df$cluster)
+
+lt <- list(Amygdala_d0_1h = intermediate.df[intermediate.df$cluster == "Amygdala_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Amygdala_d0_4h = intermediate.df[intermediate.df$cluster == "Amygdala_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Amygdala_d1_4h = intermediate.df[intermediate.df$cluster == "Amygdala_d1_4h" & intermediate.df$sig != "not_sig",]$gene)
+
+m <- make_comb_mat(lt)
+```
+
+
+```{r}
+tiff("./Fig_section3/Upsetplot.sub.amg.tiff", width = 1000, height = 1000,res = 100)
+
+ComplexHeatmap::UpSet(
+  m,
+  comb_order = order(comb_size(m),decreasing = T),
+  set_order = c("Amygdala_d0_1h","Amygdala_d0_4h","Amygdala_d1_4h"),
+  top_annotation = upset_top_annotation(m, add_numbers = TRUE),
+  right_annotation = upset_right_annotation(
+    m,
+    add_numbers = TRUE,
+    annotation_name_side = "top",
+    axis_param = list(side = "top")
+  ))
+
+
+# Close the device
+dev.off()
+```
+
+
+```{r hippocampus compareGO}
+convert_to_entrez <- function(gene_vector, orgdb) {
+  tryCatch({
+    bitr(gene_vector, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = orgdb)
+  }, error = function(e) {
+    message("Error: ", e$message)
+    return(data.frame(SYMBOL = gene_vector, ENTREZID = NA))  # Return NA if not found
+  })
+}
+```
+
+
+```{r hippocampus compareGO}
+
+intermediate.df <- hippocampus.condition.DEG
+intermediate.df$cluster <- sub("_cfcvscc$", "", intermediate.df$cluster)
+
+lt <- list(Hippocampus_d0_1h = intermediate.df[intermediate.df$cluster == "Hippocampus_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_d0_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Hippocampus_d1_4h = intermediate.df[intermediate.df$cluster == "Hippocampus_d1_4h" & intermediate.df$sig != "not_sig",]$gene)
+
+# Apply the function to each element in the list
+lt_entrez <- lapply(lt, convert_to_entrez, orgdb = org.Mm.eg.db)
+
+lt_entrez.update <- list(Hippocampus_d0_1h = lt_entrez$Hippocampus_d0_1h$ENTREZID,
+                         Hippocampus_d0_4h = lt_entrez$Hippocampus_d0_4h$ENTREZID,
+                         Hippocampus_d1_4h = lt_entrez$Hippocampus_d1_4h$ENTREZID)
+
+
+ego <- compareCluster(lt_entrez.update,
+                      keyType = "ENTREZID",
+                      ont = "BP",
+                      OrgDb='org.Mm.eg.db')
+
+
+p <- dotplot(ego,size = "Count", showCategory = 5)
+
+# ggsave(p,filename = paste("./Fig_section3/GO.cfcvscc.hippomatrix.3top.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+ggsave(p,filename = paste("./Fig_section3/GO.cfcvscc.hippomatrix.5top.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+```{r amygdala compareGO }
+
+amg.condition.DEG <- rbind(Amygdala.d0_1h.cfcvscc.marker,
+                           Amygdala.d0_4h.cfcvscc.marker,
+                           Amygdala.d1_4h.cfcvscc.marker)
+
+intermediate.df <- amg.condition.DEG
+intermediate.df$cluster <- sub("_cfcvscc$", "", intermediate.df$cluster)
+
+lt <- list(Amygdala_d0_1h = intermediate.df[intermediate.df$cluster == "Amygdala_d0_1h" & intermediate.df$sig != "not_sig",]$gene,
+           Amygdala_d0_4h = intermediate.df[intermediate.df$cluster == "Amygdala_d0_4h" & intermediate.df$sig != "not_sig",]$gene,
+           Amygdala_d1_4h = intermediate.df[intermediate.df$cluster == "Amygdala_d1_4h" & intermediate.df$sig != "not_sig",]$gene)
+
+
+# Apply the function to each element in the list
+lt_entrez <- lapply(lt, convert_to_entrez, orgdb = org.Mm.eg.db)
+
+lt_entrez.update <- list(Amygdala_d0_1h = lt_entrez$Amygdala_d0_1h$ENTREZID,
+                         Amygdala_d0_4h = lt_entrez$Amygdala_d0_4h$ENTREZID,
+                         Amygdala_d1_4h = lt_entrez$Amygdala_d1_4h$ENTREZID)
+
+
+ego <- compareCluster(lt_entrez.update,
+                      keyType = "ENTREZID",
+                      ont = "BP",
+                      OrgDb='org.Mm.eg.db')
+
+
+p <- dotplot(ego,size = "Count", showCategory = 3)
+
+ggsave(p,filename = paste("./Fig_section3/GO.cfcvscc.amg.3top.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+# ggsave(p,filename = paste("./Fig_section3/GO.cfcvscc.amg.5top.tiff", sep = ""), device='tiff', dpi=100, height = 1000, width = 1000, unit = 'px')
+```
+
+
+
+
+
+```{r IEG expression plot}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r old}
+
+```
+
+
+
+
+
+```{r}
+for (ct in unique(merge.obj$anatomy)) {
+  ct.name <- ct
+  
+  if (ct == "Frontal Cortex"){
+    ct.name <- "Frontal.Cortex"
+  }
+  if (ct == "Cerebral Nuclei"){
+    ct.name <- "Cerebral.Nuclei"
+  }
+  
+  for (i in 1:3){
+      marker <- FindMarkers(merge.obj, 
+                     # ident.1 = unique(merge.obj$condition)[2*i], ident.2 = unique(merge.obj$condition)[2*i-1], # cfc cc
+                     # ident.1 = unique(merge.obj$condition)[2*i], ident.2 = "home_cage", # cfc vs home cage
+                     ident.1 = unique(merge.obj$condition)[2*i-1], ident.2 = "home_cage", # cc vs home cage
+                     group.by = 'condition',
+                     subset.ident = ct,
+                     pseudocount.use = 0.001)
+      
+      marker <- marker[marker$p_val_adj < 0.05 & abs(marker$avg_log2FC) > log2(1.2),]
+      if(nrow(marker) < 10){
+        next
+      }
+      
+      assign("eg", bitr(rownames(marker), fromType="SYMBOL", toType="ENTREZID",OrgDb="org.Mm.eg.db"))
+      ego <- enrichGO(gene = eg$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff  = 0.05,
+                      qvalueCutoff = 0.05,
+                      readable = TRUE)
+      ego <- pairwise_termsim(ego)
+      ego <- simplify(ego)
+      
+      # write.csv(ego@result, file = paste("./detailed_anatomy/",ct.name,time[i],"cfcvscc.GO.csv", sep = "."))
+      # write.csv(ego@result, file = paste("./detailed_anatomy/",ct.name,time[i],"cfcvshomecage.GO.csv", sep = "."))
+      write.csv(ego@result, file = paste("./detailed_anatomy/",ct.name,time[i],"ccvshomecage.GO.csv", sep = "."))
+      }
+}
+```
+
+
+
+
+
+
+```{r}
+cfcvshomecage.marker.vars <- ls(envir = .GlobalEnv, pattern = ".cfcvshomecage.marker")
+cccvshomecage.marker.vars <- ls(envir = .GlobalEnv, pattern = ".ccvshomecage.marker")
+cfcvscc.marker.vars <- ls(envir = .GlobalEnv, pattern = ".cfcvscc.marker")
+```
+
+```{r}
+save.image(file = "deg.image.Rdata")
+```
+
+
+```{r}
+time_condtion.df <- sub(".cfcvshomecage.marker", "", cfcvshomecage.marker.vars)
+Time <- substr(time_condtion.df,start = nchar(time_condtion.df)-4, stop = nchar(time_condtion.df))
+Condition <- substr(time_condtion.df,start = 1, stop = nchar(time_condtion.df)-6)
+```
+
+
+```{r}
+bar.df <- data.frame(Comparison = c(rep("ccvshomecage",30), rep("cfcvshomecage",30), rep("cfcvscc",30)),
+                     CellType = rep(Condition,3),
+                     Time = rep(Time, 3))
+```
+
+
+cccvshomecage.marker.vars
+cfcvshomecage.marker.vars
+cfcvscc.marker.vars
+
+```{r 1.2 1.5 FC DEG count}
+bar.df$up12 <- 0
+bar.df$down12 <- 0
+
+bar.df$up15 <- 0
+bar.df$down15 <- 0
+
+for (i in cccvshomecage.marker.vars){
+  marker <- get(i)
+  bar.df$down12[match(i,cccvshomecage.marker.vars)] <- -sum(marker$avg_log2FC <= -log2(1.2) & marker$p_val_adj <= 0.05)
+  bar.df$up12[match(i,cccvshomecage.marker.vars)] <- sum(marker$avg_log2FC >= log2(1.2) & marker$p_val_adj <= 0.05)
+  
+  bar.df$down15[match(i,cccvshomecage.marker.vars)] <- -sum(marker$avg_log2FC <= -log2(1.5) & marker$p_val_adj <= 0.05)
+  bar.df$up15[match(i,cccvshomecage.marker.vars)] <- sum(marker$avg_log2FC >= log2(1.5) & marker$p_val_adj <= 0.05)
+}
+
+for (i in cfcvshomecage.marker.vars){
+  marker <- get(i)
+  bar.df$down12[match(i,cfcvshomecage.marker.vars)+30] <- -sum(marker$avg_log2FC <= -log2(1.2) & marker$p_val_adj <= 0.05)
+  bar.df$up12[match(i,cfcvshomecage.marker.vars)+30] <- sum(marker$avg_log2FC >= log2(1.2) & marker$p_val_adj <= 0.05)
+  
+  bar.df$down15[match(i,cfcvshomecage.marker.vars)+30] <- -sum(marker$avg_log2FC <= -log2(1.5) & marker$p_val_adj <= 0.05)
+  bar.df$up15[match(i,cfcvshomecage.marker.vars)+30] <- sum(marker$avg_log2FC >= log2(1.5) & marker$p_val_adj <= 0.05)
+}
+
+for (i in cfcvscc.marker.vars){
+  marker <- get(i)
+  bar.df$down12[match(i,cfcvscc.marker.vars)+60] <- -sum(marker$avg_log2FC <= -log2(1.2) & marker$p_val_adj <= 0.05)
+  bar.df$up12[match(i,cfcvscc.marker.vars)+60] <- sum(marker$avg_log2FC >= log2(1.2) & marker$p_val_adj <= 0.05)
+  
+  bar.df$down15[match(i,cfcvscc.marker.vars)+60] <- -sum(marker$avg_log2FC <= -log2(1.5) & marker$p_val_adj <= 0.05)
+  bar.df$up15[match(i,cfcvscc.marker.vars)+60] <- sum(marker$avg_log2FC >= log2(1.5) & marker$p_val_adj <= 0.05)
+}
+
+bar.df$ct_time <- paste(bar.df$CellType,bar.df$Time, sep = "_")
+```
+
+
+
+```{r}
+plot.list=list()
+for (i in c("ccvshomecage","cfcvshomecage","cfcvscc")){
+  bar_data <- bar.df[bar.df$Comparison == i,]
+  bar_data <- data.frame(ct_time = rep(bar_data$ct_time,2),
+                         number = c(bar_data$up12,bar_data$down12),
+                         direct = c(rep("up",30),rep("down",30))
+                         )
+  
+  bar.plot <- ggplot(bar_data, aes(x = ct_time, y = number, fill = direct)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = i, y = "Number of DEGs", fill = "Direction") +
+  geom_text(aes(label=abs(number)), position=position_dodge(width=0), 
+            hjust= ifelse(bar_data$direct == 'up', 0.5, 0.5),
+            vjust = ifelse(bar_data$direct == 'up', -0.5, 1.5),
+            size=5) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue"))+
+  theme(
+    axis.text=element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels
+    panel.background = element_rect(fill = "white"), # Change background to white
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_rect(size = 2,fill = NA)
+  )
+  plot.list[[i]] <- bar.plot
+}
+
+
+wrap_plots(plot.list,ncol = 1)&theme(plot.margin = unit(c(0,0,0,0),"cm"))
+# ggsave(paste("./detailed_anatomy/Barplot.DEG12FC.2nd.tiff", sep = ""), device='tiff', dpi=500, height = 12, width = 15, unit = 'in')
+```
+
+
+
+
+```{r}
+plot.list=list()
+for (i in c("ccvshomecage","cfcvshomecage","cfcvscc")){
+  bar_data <- bar.df[bar.df$Comparison == i,]
+  bar_data <- data.frame(ct_time = rep(bar_data$ct_time,2),
+                         number = c(bar_data$up15,bar_data$down15),
+                         direct = c(rep("up",30),rep("down",30))
+                         )
+  
+  bar.plot <- ggplot(bar_data, aes(x = ct_time, y = number, fill = direct)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = i, y = "Number of DEGs", fill = "Direction") +
+  geom_text(aes(label=abs(number)), position=position_dodge(width=0), 
+            hjust= ifelse(bar_data$direct == 'up', 0.5, 0.5),
+            vjust = ifelse(bar_data$direct == 'up', -0.5, 1.5),
+            size=5) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue"))+
+  theme(
+    axis.text=element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels
+    panel.background = element_rect(fill = "white"), # Change background to white
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_rect(size = 2,fill = NA)
+  )
+  plot.list[[i]] <- bar.plot
+}
+
+
+wrap_plots(plot.list,ncol = 1)&theme(plot.margin = unit(c(0,0,0,0),"cm"))
+ggsave(paste("./detailed_anatomy/Barplot.DEG15FC.2nd.tiff", sep = ""), device='tiff', dpi=500, height = 12, width = 15, unit = 'in')
+```
+
+
+
+```{r comparecluster}
+
+hippocampus.marker.vars <- ls(envir = .GlobalEnv, pattern = "^Hippocampus.*\\.marker$")
+
+
+
+
+for (i in hippocampus.marker.vars[1:9]){
+  marker <- get(i)
+  assign(paste(i,".ez", sep = ""),
+         bitr(rownames(marker[abs(marker$avg_log2FC) >= log2(1.2) & marker$p_val_adj <= 0.05,]), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Mm.eg.db"))
+}
+
+hippo.ez <- ls(envir = .GlobalEnv, pattern = "^Hippocampus.*\\.marker.ez$")
+
+compare.ls <- list()
+for (i in 1:9) {
+  compare.ls[[i]] <- get(hippo.ez[i])$ENTREZID
+}
+names(compare.ls) <- hippo.ez[1:9]
+
+
+
+hippo.ck <- compareCluster(geneCluster = compare.ls, fun = enrichGO,OrgDb="org.Mm.eg.db", ont = "BP")
+hippo.ck <- setReadable(hippo.ck, OrgDb = org.Mm.eg.db, keyType="ENTREZID")
+```
+
+
+
+```{r}
+dp <- dotplot(hippo.ck)
+dp <- dp + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave(paste("./detailed_anatomy/Dotplot.hippomatrix.tiff", sep = ""), device='tiff', dpi=500, height = 20, width = 15, unit = 'in')
+```
+
+
+
+
+```{r singlecell regions}
+sc.obj <- subset(merge.obj, subset = anatomy.detail %in% c("Hippocampus","Hippocampus_CA3", "Hippocampus_CA1", 
+                                                           "Hippocampus_DG", "Amygdala"))
+```
+
+
+Hippocampus_CA1.d0_1h.ccvshomecage.marker,
+Hippocampus_CA1.d0_4h.ccvshomecage.marker,
+Hippocampus_CA1.d1_4h.ccvshomecage.marker,
+Hippocampus_CA3.d0_1h.ccvshomecage.marker, 
+Hippocampus_CA3.d0_4h.ccvshomecage.marker,
+Hippocampus_CA3.d1_4h.ccvshomecage.marker,
+Hippocampus_DG.d0_1h.ccvshomecage.marker,
+Hippocampus_DG.d0_4h.ccvshomecage.marker,
+Hippocampus_DG.d1_4h.ccvshomecage.marker,
+Hippocampus.d0_1h.ccvshomecage.marker,
+Hippocampus.d0_4h.ccvshomecage.marker,
+Hippocampus.d1_4h.ccvshomecage.marker
+
+```{r hip transromed volcano}
+
+# hippocampus.condition.DEG <- rbind(Hippocampus.d0_1h.cfcvscc.marker,
+#                                     Hippocampus.d0_4h.cfcvscc.marker,
+#                                     Hippocampus.d1_4h.cfcvscc.marker,
+#                                     Hippocampus_CA3.d0_1h.cfcvscc.marker,
+#                                     Hippocampus_CA3.d0_4h.cfcvscc.marker,
+#                                     Hippocampus_CA3.d1_4h.cfcvscc.marker,
+#                                     Hippocampus_DG.d0_1h.cfcvscc.marker,
+#                                     Hippocampus_DG.d0_4h.cfcvscc.marker,
+#                                     Hippocampus_DG.d1_4h.cfcvscc.marker,
+#                                     Hippocampus.d0_1h.cfcvscc.marker,
+#                                     Hippocampus.d0_4h.cfcvscc.marker,
+#                                     Hippocampus.d1_4h.cfcvscc.marker)
+
+# hippocampus.condition.DEG <- rbind(Hippocampus_DG.d0_1h.ccvshomecage.marker,
+#                                     Hippocampus_DG.d0_4h.ccvshomecage.marker,
+#                                     Hippocampus_DG.d1_4h.ccvshomecage.marker,
+#                                     Hippocampus_DG.d0_1h.cfcvshomecage.marker,
+#                                     Hippocampus_DG.d0_4h.cfcvshomecage.marker,
+#                                     Hippocampus_DG.d1_4h.cfcvshomecage.marker,
+#                                     Hippocampus_DG.d0_1h.cfcvscc.marker,
+#                                     Hippocampus_DG.d0_4h.cfcvscc.marker,
+#                                     Hippocampus_DG.d1_4h.cfcvscc.marker)
+
+
+hippocampus.condition.DEG <- rbind(Amygdala.d0_1h.ccvshomecage.marker,
+                                    Amygdala.d0_4h.ccvshomecage.marker,
+                                    Amygdala.d1_4h.ccvshomecage.marker,
+                                    Amygdala.d0_1h.cfcvshomecage.marker,
+                                    Amygdala.d0_4h.cfcvshomecage.marker,
+                                    Amygdala.d1_4h.cfcvshomecage.marker,
+                                    Amygdala.d0_1h.cfcvscc.marker,
+                                    Amygdala.d0_4h.cfcvscc.marker,
+                                    Amygdala.d1_4h.cfcvscc.marker)
+
+# hippocampus.condition.DEG <- hippocampus.condition.DEG%>%arrange(cluster,sig)
+
+hippocampus.condition.DEG$padj_log10_neg <-  -log10(hippocampus.condition.DEG$p_val_adj)
+hippocampus.condition.DEG$padj_log10_neg <- ifelse(hippocampus.condition.DEG$avg_log2FC > 0,
+                                        hippocampus.condition.DEG$padj_log10_neg,
+                                        -hippocampus.condition.DEG$padj_log10_neg)
+
+```
+
+
+```{r}
+hippocampus.condition.DEG$regulation[hippocampus.condition.DEG$sig == "not_sig"] <- "NS"
+
+hip.plot.list=list()
+for (ci in unique(hippocampus.condition.DEG$cluster)){
+  print(ci)
+  tmpdf=hippocampus.condition.DEG %>% filter(cluster == ci)
+  minabs=abs(min(tmpdf$padj_log10_neg))
+  maxabs=max(tmpdf$padj_log10_neg)
+  thre=0
+  if(minabs < maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > minabs] = minabs
+    thre=minabs
+  }
+  if(minabs > maxabs) {
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-maxabs)] = -maxabs
+    thre=maxabs
+  }
+  if(minabs == maxabs & maxabs == Inf) {
+    thre = min(
+      abs(
+        range(
+          tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < Inf & tmpdf$padj_log10_neg > -Inf]
+        )
+      )
+    )
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg < (-thre)] = -thre
+    tmpdf$padj_log10_neg[tmpdf$padj_log10_neg > thre] = thre
+  }
+  
+  plotdata = tmpdf
+  tmpdf=tmpdf%>%filter(sig != "not") #这里我取了logFC最极端的几个gene来标注文本，实际处理中不一定这样做
+  tmpdf=tmpdf%>%arrange(desc(avg_log2FC))
+  tmpdf.a=head(tmpdf%>%filter(avg_log2FC > 0),5)
+  tmpdf.a$d=thre*2*0.05+(-thre)-tmpdf.a$padj_log10_neg
+  tmpdf.b=tail(tmpdf%>%filter(avg_log2FC < 0),5)
+  tmpdf.b$d=thre*2*0.95-thre  - tmpdf.b$padj_log10_neg
+  textdata.down = tmpdf.b
+  textdata.up   = tmpdf.a
+  
+  
+  ###画图
+  tmpplot=plotdata%>%ggplot(aes(x=padj_log10_neg,y=avg_log2FC))+
+    geom_point(aes(color=regulation),size=3)+
+    geom_hline(yintercept = c(-log2(1.2),log2(1.2)),linetype="dashed")+
+    geom_hline(yintercept = c(-log2(1.5),log2(1.5)),linetype="dashed")+
+    geom_hline(yintercept = c(0),linetype="solid")+
+    geom_vline(xintercept = c(-log10(0.05),log10(0.05)))+
+    # geom_vline(xintercept = c(-log10(0.01),log10(0.01)))+
+    labs(title = ci)+
+    scale_color_manual(values =  c("Up" = "red", "Down" = "blue", "NS" = "grey"))+
+    scale_y_continuous("log2(Fold Change)",expand = c(0.02,0),limits = c(-3,3))+
+    scale_x_continuous("log10(P-adjusted)", limits = c(-3, 3))
+    theme_bw()+
+    theme(
+      panel.grid = element_blank(),
+      legend.position = "none",
+      axis.ticks.x.bottom = element_blank(),
+      axis.text.x.bottom = element_blank(),
+      axis.title.x.bottom = element_blank(),
+      axis.text.y.left = element_text(size = 14,color = "black"),
+      axis.title.y.left = element_text(size = 16),
+      plot.title = element_text(size = 16,hjust = 0.5)
+    )
+  
+  index=which(ci == unique(hippocampus.condition.DEG$cluster))
+  if (index!=1) {
+    tmpplot=tmpplot+theme(
+      axis.title.y.left = element_blank(),
+      axis.ticks.y.left = element_blank(),
+      axis.text.y.left = element_blank()
+    )
+  }
+  hip.plot.list[[get("index")]]=tmpplot
+} 
+
+wrap_plots(hip.plot.list,ncol = 3)&theme(plot.margin = unit(c(0,0,0,0),"cm")) # 400*500  800*500
+
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo.ccvshomecage.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo.cfcvshomecage.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo.cfcvscc.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo_CA1.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo_CA3.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo_DG.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+# ggsave(paste("./detailed_anatomy/TransVolcano.hippo_mtx.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+ggsave(paste("./detailed_anatomy/TransVolcano.amygdala.tiff", sep = ""), device='tiff', dpi=500, height = 15, width = 30, unit = 'in')
+```
+
+
+```{r}
+library(ggvenn)
+```
+
+Hippocampus_CA1.d0_1h.ccvshomecage.marker,
+Hippocampus_CA1.d0_4h.ccvshomecage.marker,
+Hippocampus_CA1.d1_4h.ccvshomecage.marker,
+Hippocampus_CA3.d0_1h.ccvshomecage.marker, 
+Hippocampus_CA3.d0_4h.ccvshomecage.marker,
+Hippocampus_CA3.d1_4h.ccvshomecage.marker,
+Hippocampus_DG.d0_1h.ccvshomecage.marker,
+Hippocampus_DG.d0_4h.ccvshomecage.marker,
+Hippocampus_DG.d1_4h.ccvshomecage.marker,
+Hippocampus.d0_1h.ccvshomecage.marker,
+Hippocampus.d0_4h.ccvshomecage.marker,
+Hippocampus.d1_4h.ccvshomecage.marker
+
+```{r}
+ggvenn(list(ccvshomecage = rownames(Amygdala.d0_1h.ccvshomecage.marker[Amygdala.d0_1h.ccvshomecage.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d0_1h.ccvshomecage.marker$avg_log2FC) > log2(1.2),]),
+            cfcvshomecage = rownames(Amygdala.d0_1h.cfcvshomecage.marker[Amygdala.d0_1h.cfcvshomecage.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d0_1h.cfcvshomecage.marker$avg_log2FC) > log2(1.2),]),
+            cfcvscc = rownames(Amygdala.d0_1h.cfcvscc.marker[Amygdala.d0_1h.cfcvscc.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d0_1h.cfcvscc.marker$avg_log2FC) > log2(1.2),]))) +
+  ggtitle("Amygdala.d0_1h")
+
+ggvenn(list(ccvshomecage = rownames(Amygdala.d0_4h.ccvshomecage.marker[Amygdala.d0_4h.ccvshomecage.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d0_4h.ccvshomecage.marker$avg_log2FC) > log2(1.2),]),
+            cfcvshomecage = rownames(Amygdala.d0_4h.cfcvshomecage.marker[Amygdala.d0_4h.cfcvshomecage.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d0_4h.cfcvshomecage.marker$avg_log2FC) > log2(1.2),]),
+            cfcvscc = rownames(Amygdala.d0_4h.cfcvscc.marker[Amygdala.d0_4h.cfcvscc.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d0_4h.cfcvscc.marker$avg_log2FC) > log2(1.2),]))) +
+  ggtitle("Amygdala.d0_4h")
+
+ggvenn(list(ccvshomecage = rownames(Amygdala.d1_4h.ccvshomecage.marker[Amygdala.d1_4h.ccvshomecage.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d1_4h.ccvshomecage.marker$avg_log2FC) > log2(1.2),]),
+            cfcvshomecage = rownames(Amygdala.d1_4h.cfcvshomecage.marker[Amygdala.d1_4h.cfcvshomecage.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d1_4h.cfcvshomecage.marker$avg_log2FC) > log2(1.2),]),
+            cfcvscc = rownames(Amygdala.d1_4h.cfcvscc.marker[Amygdala.d1_4h.cfcvscc.marker$p_val_adj < 0.05 &
+                                                                    abs(Amygdala.d1_4h.cfcvscc.marker$avg_log2FC) > log2(1.2),]))) +
+  ggtitle("Amygdala.d1_4h")
+```
+

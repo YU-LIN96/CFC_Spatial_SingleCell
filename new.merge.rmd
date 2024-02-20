@@ -1,0 +1,257 @@
+---
+title: "new.merge"
+output: html_document
+date: "2023-10-12"
+---
+
+
+# d0 cc 1h rep1
+```{r}
+
+d0_cc_1h_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/rep1_old/CC_d0_1h/outs/",slice = "d0_cc_1h_rep1")
+
+d0_cc_1h_rep1_extra <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cc_1h_rep1_extra/",slice = "d0_cc_1h_rep1")
+
+d0_cc_1h_rep1_merge <- d0_cc_1h_rep1
+
+d0_cc_1h_rep1_merge@assays$Spatial@counts <- d0_cc_1h_rep1@assays$Spatial@counts+d0_cc_1h_rep1_extra@assays$Spatial@counts
+d0_cc_1h_rep1_merge@assays$Spatial@data <- d0_cc_1h_rep1_merge@assays$Spatial@counts
+
+d0_cc_1h_rep1_merge$nCount_Spatial <- colSums(d0_cc_1h_rep1_merge@assays$Spatial@counts)
+d0_cc_1h_rep1_merge$nFeature_Spatial <- colSums(d0_cc_1h_rep1_merge@assays$Spatial@counts !=0)
+
+d0_cc_1h_rep1_merge$orig.ident <- "d0_cc_1h_rep1"
+```
+
+```{r}
+all.equal(d0_cc_1h_rep1_extra@assays$Spatial@counts,d0_cc_1h_rep1_extra@assays$Spatial@data)
+
+all.equal(colSums(d0_cc_1h_rep1_extra@assays$Spatial@counts),d0_cc_1h_rep1_extra$nCount_Spatial)
+
+all.equal(colSums(d0_cc_1h_rep1_extra@assays$Spatial@counts !=0),d0_cc_1h_rep1_extra$nFeature_Spatial)
+
+```
+
+# d0 cfc 1h rep1
+```{r}
+d0_cfc_1h_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/rep1_old/cfc_d0_1h/outs/",slice = "d0_cfc_1h_rep1")
+
+d0_cfc_1h_rep1$orig.ident <- "d0_cfc_1h_rep1"
+```
+
+# d0 cc 4h rep1
+```{r}
+d0_cc_4h_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cc_d0_4h_rep1/outs/",slice = "d0_cc_4h_rep1")
+
+d0_cc_4h_rep1$orig.ident <- "d0_cc_4h_rep1"
+```
+
+# d0 cfc 4h rep1
+```{r}
+d0_cfc_4h_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cfc_d0_4h_rep1/outs/",slice = "d0_cfc_4h_rep1")
+d0_cfc_4h_rep1_extra <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cfc_d0_4h_rep1_extra/",slice = "d0_cfc_4h_rep1")
+d0_cfc_4h_rep1_merge <- d0_cfc_4h_rep1
+
+
+d0_cfc_4h_rep1_merge@assays$Spatial@counts <- d0_cfc_4h_rep1@assays$Spatial@counts+d0_cfc_4h_rep1_extra@assays$Spatial@counts
+d0_cfc_4h_rep1_merge@assays$Spatial@data <- d0_cfc_4h_rep1_merge@assays$Spatial@counts
+d0_cfc_4h_rep1_merge$nCount_Spatial <- colSums(d0_cfc_4h_rep1_merge@assays$Spatial@counts)
+d0_cfc_4h_rep1_merge$nFeature_Spatial <- colSums(d0_cfc_4h_rep1_merge@assays$Spatial@counts !=0)
+
+d0_cfc_4h_rep1_merge$orig.ident <- "d0_cfc_4h_rep1"
+```
+
+
+
+# d0 cc 1h rep2
+```{r}
+d0_cc_1h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/CC_d0_1h_rep2/outs/",slice = "d0_cc_1h_rep2")
+d0_cc_1h_rep2_extra <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cc_1h_rep2_extra/outs/",slice = "d0_cc_1h_rep2")
+d0_cc_1h_rep2_merge <- d0_cc_1h_rep2
+
+
+d0_cc_1h_rep2_merge@assays$Spatial@counts <- d0_cc_1h_rep2@assays$Spatial@counts+d0_cc_1h_rep2_extra@assays$Spatial@counts
+d0_cc_1h_rep2_merge@assays$Spatial@data <- d0_cc_1h_rep2_merge@assays$Spatial@counts
+d0_cc_1h_rep2_merge$nCount_Spatial <- colSums(d0_cc_1h_rep2_merge@assays$Spatial@counts)
+d0_cc_1h_rep2_merge$nFeature_Spatial <- colSums(d0_cc_1h_rep2_merge@assays$Spatial@counts !=0)
+
+d0_cc_1h_rep2_merge$orig.ident <- "d0_cc_1h_rep2"
+```
+
+# d0 cfc 1h rep2
+```{r}
+d0_cfc_1h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cfc_d0_1h_rep2/outs/",slice = "d0_cfc_1h_rep2")
+d0_cfc_1h_rep2_extra <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cfc_1h_rep2_extra/outs/",slice = "d0_cfc_1h_rep2")
+d0_cfc_1h_rep2_merge <- d0_cfc_1h_rep2
+
+
+d0_cfc_1h_rep2_merge@assays$Spatial@counts <- d0_cfc_1h_rep2@assays$Spatial@counts+d0_cfc_1h_rep2_extra@assays$Spatial@counts
+d0_cfc_1h_rep2_merge@assays$Spatial@data <- d0_cfc_1h_rep2_merge@assays$Spatial@counts
+d0_cfc_1h_rep2_merge$nCount_Spatial <- colSums(d0_cfc_1h_rep2_merge@assays$Spatial@counts)
+d0_cfc_1h_rep2_merge$nFeature_Spatial <- colSums(d0_cfc_1h_rep2_merge@assays$Spatial@counts !=0)
+
+d0_cfc_1h_rep2_merge$orig.ident <- "d0_cfc_1h_rep2"
+```
+
+# d0 cc 4h rep2
+```{r}
+d0_cc_4h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cc_d0_4h_rep2/outs/",slice = "d0_cc_4h_rep2")
+d0_cc_4h_rep2_extra <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cc_4h_rep2_extra/outs/",slice = "d0_cc_4h_rep2")
+d0_cc_4h_rep2_merge <- d0_cc_4h_rep2
+
+
+d0_cc_4h_rep2_merge@assays$Spatial@counts <- d0_cc_4h_rep2@assays$Spatial@counts+d0_cc_4h_rep2_extra@assays$Spatial@counts
+d0_cc_4h_rep2_merge@assays$Spatial@data <- d0_cc_4h_rep2_merge@assays$Spatial@counts
+d0_cc_4h_rep2_merge$nCount_Spatial <- colSums(d0_cc_4h_rep2_merge@assays$Spatial@counts)
+d0_cc_4h_rep2_merge$nFeature_Spatial <- colSums(d0_cc_4h_rep2_merge@assays$Spatial@counts !=0)
+
+d0_cc_4h_rep2_merge$orig.ident <- "d0_cc_4h_rep2"
+```
+
+# d0 cfc 4h rep2
+```{r}
+d0_cfc_4h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cfc_d0_4h_rep2/outs/",slice = "d0_cfc_4h_rep2")
+d0_cfc_4h_rep2_extra <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/cfc_4h_rep2_extra/outs/",slice = "d0_cfc_4h_rep2")
+d0_cfc_4h_rep2_merge <- d0_cfc_4h_rep2
+
+
+d0_cfc_4h_rep2_merge@assays$Spatial@counts <- d0_cfc_4h_rep2@assays$Spatial@counts+d0_cfc_4h_rep2_extra@assays$Spatial@counts
+d0_cfc_4h_rep2_merge@assays$Spatial@data <- d0_cfc_4h_rep2_merge@assays$Spatial@counts
+d0_cfc_4h_rep2_merge$nCount_Spatial <- colSums(d0_cfc_4h_rep2_merge@assays$Spatial@counts)
+d0_cfc_4h_rep2_merge$nFeature_Spatial <- colSums(d0_cfc_4h_rep2_merge@assays$Spatial@counts !=0)
+
+d0_cfc_4h_rep2_merge$orig.ident <- "d0_cfc_4h_rep2"
+```
+
+# d0 cc 1h rep3
+```{r}
+d0_cc_1h_rep3 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/rep3/CC_d0_1h_rep3/outs/",slice = "d0_cc_1h_rep3")
+
+d0_cc_1h_rep3$orig.ident <- "d0_cc_1h_rep3"
+```
+
+
+# d0 cfc 1h rep3
+```{r}
+d0_cfc_1h_rep3 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/rep3/cfc_d0_1h_rep3/outs/",slice = "d0_cfc_1h_rep3")
+
+d0_cfc_1h_rep3$orig.ident <- "d0_cfc_1h_rep3"
+```
+
+# d0 cc 4h rep3
+```{r}
+d0_cc_4h_rep3 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/rep3/cc_d0_4h_rep3/outs/",slice = "d0_cc_4h_rep3")
+
+d0_cc_4h_rep3$orig.ident <- "d0_cc_4h_rep3"
+```
+
+
+# d1 cc 4h rep1
+```{r}
+d1_cc_4h_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/d1_4h_rep1_rep2/cc_4h_d1_r1/outs/",slice = "d1_cc_4h_rep1")
+
+d1_cc_4h_rep1$orig.ident <- "d1_cc_4h_rep1"
+```
+
+
+# d1 cc 4h rep1 tech2
+```{r}
+d1_cc_4h_rep1_tech <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/rep3/d1_cc_4h_r1_t2/outs/",slice = "d1_cc_4h_rep3_technical")
+
+d1_cc_4h_rep1_tech$orig.ident <- "d1_cc_4h_rep1_technical"
+```
+
+
+# d1 cfc 4h rep1
+```{r}
+d1_cfc_4h_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/d1_4h_rep1_rep2/cfc_4h_d1_r1/outs/",slice = "d1_cfc_4h_rep1")
+
+d1_cfc_4h_rep1$orig.ident <- "d1_cfc_4h_rep1"
+```
+
+
+# d1_cc_4h_rep2
+```{r}
+d1_cc_4h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/d1_4h_rep1_rep2/cc_4h_d1_r2/outs/",slice = "d1_cc_4h_rep2")
+
+d1_cc_4h_rep2$orig.ident <- "d1_cc_4h_rep2"
+```
+
+
+# d1_cfc_4h_rep2
+```{r}
+# d1_cfc_4h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_analysis/CC_CFC_1h_4h/d1_4h_rep1_rep2/cfc_4h_d1_r2/outs/",slice = "d1_cfc_4h_rep2")
+
+# d1_cfc_4h_rep2$orig.ident <- "d1_cfc_4h_rep2"
+```
+
+
+```{r}
+d1_cfc_4h_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_1h_4h/output/Jun23_data/CFC_d1_4h_rep2/outs/",slice = "d1_cfc_4h_rep2")
+
+d1_cfc_4h_rep2$orig.ident <- "d1_cfc_4h_rep2"
+```
+
+```{r}
+home_cage_rep1 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_1h_4h/output/Jun23_data/home_cage_rep1/outs/",slice = "home_cage_rep1")
+home_cage_rep1$orig.ident <- "home_cage_rep1"
+
+
+home_cage_rep2 <- Load10X_Spatial(data.dir = "/projects/davidxie_lab/CC_CFC_1h_4h/output/Jun23_data/home_cage_rep2/outs/",slice = "home_cage_rep2")
+home_cage_rep2$orig.ident <- "home_cage_rep2"
+```
+
+
+```{r}
+# merge.obj <- merge(d0_cc_1h_rep1_merge,c(d0_cfc_1h_rep1,d0_cc_4h_rep1,d0_cfc_4h_rep1_merge,
+#                                          d0_cc_1h_rep2_merge,d0_cfc_1h_rep2_merge,d0_cc_4h_rep2_merge,d0_cfc_4h_rep2_merge,
+#                                          d0_cc_1h_rep3,d0_cfc_1h_rep3,d0_cc_4h_rep3,
+#                                          d1_cc_4h_rep1,d1_cfc_4h_rep1,d1_cc_4h_rep2,d1_cfc_4h_rep2))
+```
+
+
+
+```{r}
+merge.obj <- merge(d0_cc_1h_rep1_merge,c(d0_cc_1h_rep3,d0_cfc_1h_rep2_merge,d0_cfc_1h_rep3,
+                                         d0_cc_4h_rep1,d0_cc_4h_rep2_merge,d0_cfc_4h_rep1_merge,d0_cfc_4h_rep2_merge,
+                                         d1_cc_4h_rep1,d1_cc_4h_rep2,d1_cfc_4h_rep1,d1_cfc_4h_rep2,
+                                         home_cage_rep1,home_cage_rep2))
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+merge.obj <- NormalizeData(merge.obj)
+
+merge.obj <- FindVariableFeatures(merge.obj, nfeatures = 3000)
+merge.obj <- ScaleData(merge.obj, features = rownames(merge.obj))
+merge.obj <- RunPCA(merge.obj, npcs = 50, features = rownames(merge.obj))
+ElbowPlot(merge.obj,ndims = 50) + geom_hline(yintercept=3)+
+   scale_y_continuous(breaks = c(3,5,10,15))
+
+merge.obj <- RunUMAP(merge.obj, dims = 1:30)
+merge.obj <- FindNeighbors(merge.obj, reduction = "pca", dims = 1:30)
+merge.obj <- FindClusters(merge.obj, resolution = 0.1)
+
+
+
+```
+
+
+
+```{r}
+SpatialDimPlot(merge.obj,ncol = 4,label = T)
+```
+
+```{r}
+save(merge.obj, file = "new.merge.obj.Rdata")
+```
+
